@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<script type="module">
+    import { h, Component, render } from 'https://esm.sh/preact?dev';
+    import { signal } from "https://esm.sh/@preact/signals?dev";
+    import htm from 'https://esm.sh/htm?dev';
+
+    // Initialize htm with Preact
+    const html = htm.bind(h);
+
+    const invalidStateException = Symbol("Invalid State Exception")
+    const cardValues = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+    const cardSuits = ["Clubs", "Spades", "Hearts", "Diamonds"]
+    const allCards = cardValues.flatMap((v) => cardSuits.map((s) => [v, s]));
+    class Server {
+        constructor() {
+            // initial state
+            const hands = this.#deal(3)
+            this.state = {
+                status: "valid",
+                played: [],
+                said: [],
+                players: {
+                    "a": {
+                        hand: hands[0],
+                    },
+                    "b": {
+                        hand: hands[1],
+                    },
+                    "c": {
+                        hand: hands[2],
+                    }
+                },
+            }
+        }
+
+        #deal(numPlayers) {
+            const deck = allCards.slice()
+            this.#shuffleArray(deck)
+            return this.#splitArray(deck, numPlayers)
+        }
+        #shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        #splitArray(array, nChunks) {
+            let result = [];
+            for (let i = nChunks; i > 0; i--) {
+                result.push(array.splice(0, Math.ceil(array.length / i)));
+            }
+            return result;
+        }
+
+        #expectedToSayNext() {
+            if (this.state.said.length === 0) {
+                return "A"
+            }
+            const saidLast = this.state.said[this.state.said.length - 1]
+            return cardValues[(cardValues.indexOf(saidLast) + 1) % cardValues.length]
+        }
+
+        sendReceiveAction(player, action, payload) {
+            if (this.state.status === "invalid") {
+                throw invalidStateException
+            }
+
+            switch (action) {
+                case "sayAndPlay":
+                    const hand = this.state.players[player].hand
+                    const said = payload
+                    // calculate expectedToSayNext before adjusting state
+                    // benefits of doing a full immutable state would mean
+                    // we could be more clear about this
+                    const expectedToSayNext = this.#expectedToSayNext()
+
+                    const played = hand.pop()
+                    this.state.played.push(played)
+                    this.state.said.push(said)
+                    if (said !== expectedToSayNext) {
+                        this.state.status = "invalid"
+                        throw invalidStateException
+                    }
+                    return played // instead server could return new state for client and call setState with new state for server
+                    break
+            
+                default:
+                    break
+            }
+        }
+    }
+
+    const state = {
+        pile: signal([]),
+        handSize: signal(0),
+        status: signal("valid"),
+    }
+
+
+    const server = new Server()
+    const currentPlayer = "a"
+    
+    function sayAndPlay(said) {
+        try {
+            const played = server.sendReceiveAction(currentPlayer, "sayAndPlay", said);
+            state.pile.value = [...state.pile.value, played]
+        } catch(e) {
+            if (e === invalidStateException) {
+                state.status.value = "invalid"
+            }
+        }
+    }
+
+    function SayAndPlayButton({ cardValue }) {
+        return html`<button onClick=${() => sayAndPlay(cardValue)}>${cardValue}</button>`
+    }
+
+    function App(props) {
+        const pile = state.pile.value
+        const topCard = pile.length > 0 ? pile[pile.length - 1] : null
+        return html`
+            <div>
+                <div>Debug pile contents: ${pile}</div>
+                <div>${state.status.value}</div>
+                <div><strong>Top of pile</strong>: ${topCard}</div>
+                <div>${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} />`)}</div>
+            </div>`
+    }
+    
+    render(html`<${App} />`, document.body);
+</script>
