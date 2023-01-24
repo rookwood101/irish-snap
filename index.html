@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <script type="module">
-    import { h, Component, render } from 'https://esm.sh/preact?dev';
-    import { signal } from "https://esm.sh/@preact/signals?dev";
-    import htm from 'https://esm.sh/htm?dev';
+    import { h, Component, render } from 'https://esm.sh/preact';
+    import { signal } from "https://esm.sh/@preact/signals";
+    import htm from "https://esm.sh/htm";
+    import produce from "https://esm.sh/immer"
 
     // Initialize htm with Preact
     const html = htm.bind(h);
@@ -12,7 +13,7 @@
     const cardSuits = ["Clubs", "Spades", "Hearts", "Diamonds"]
     const allCards = cardValues.flatMap((v) => cardSuits.map((s) => [v, s]));
     class Server {
-        constructor() {
+        constructor(clientUpdateState) {
             // initial state
             const hands = this.#deal(3)
             this.state = {
@@ -22,12 +23,15 @@
                 players: {
                     "a": {
                         hand: hands[0],
+                        updateState: clientUpdateState,
                     },
                     "b": {
                         hand: hands[1],
+                        updateState: (_newState) => {},
                     },
                     "c": {
                         hand: hands[2],
+                        updateState: (_newState) => {},
                     }
                 },
             }
@@ -53,62 +57,79 @@
         }
 
         #expectedToSayNext() {
-            if (this.state.said.length === 0) {
-                return "A"
-            }
-            const saidLast = this.state.said[this.state.said.length - 1]
+            const saidLast = this.state.said[this.state.said.length - 1] ?? "K"
             return cardValues[(cardValues.indexOf(saidLast) + 1) % cardValues.length]
         }
 
+        #updateState(stateUpdater) {
+            const newState = produce(this.state, stateUpdater)
+            console.log(newState)
+            this.state = newState
+            Object.values(this.state.players).forEach(player => {
+                player.updateState({
+                    played: this.state.played,
+                    said: this.state.said,
+                    handSize: player.hand.length,
+                    status: this.state.status,
+                })
+            })
+        }
+
         sendReceiveAction(player, action, payload) {
-            if (this.state.status === "invalid") {
-                throw invalidStateException
+            if (this.state.status !== "valid") {
+                return
             }
 
             switch (action) {
                 case "sayAndPlay":
-                    const hand = this.state.players[player].hand
                     const said = payload
-                    // calculate expectedToSayNext before adjusting state
-                    // benefits of doing a full immutable state would mean
-                    // we could be more clear about this
                     const expectedToSayNext = this.#expectedToSayNext()
 
-                    const played = hand.pop()
-                    this.state.played.push(played)
-                    this.state.said.push(said)
-                    if (said !== expectedToSayNext) {
-                        this.state.status = "invalid"
-                        throw invalidStateException
-                    }
-                    return played // instead server could return new state for client and call setState with new state for server
+                    this.#updateState(draftState => {
+                        const played = draftState.players[player].hand.pop()
+                        draftState.played.push(played)
+                        draftState.said.push(said)
+                        if (said !== expectedToSayNext) {
+                            draftState.status = `You should've said ${expectedToSayNext}!`
+                        }
+                    })
                     break
-            
                 default:
                     break
             }
         }
     }
 
-    const state = {
-        pile: signal([]),
-        handSize: signal(0),
-        status: signal("valid"),
+    const state = signal({
+        played: [],
+        said: [],
+        handSize: 0,
+        status: "valid",
+    })
+
+    function updateState(newState) {
+        state.value = newState
+        if (state.value.status !== "valid") {
+            alert(state.value.status)
+        }
+    }
+    const server = new Server(updateState)
+    const currentPlayer = "a"
+
+    function sayAndPlay(said) {
+        if (state.value.status !== "valid") {
+            alert("Nuh uh!")
+            return
+        }
+        server.sendReceiveAction(currentPlayer, "sayAndPlay", said);
     }
 
-
-    const server = new Server()
-    const currentPlayer = "a"
-    
-    function sayAndPlay(said) {
-        try {
-            const played = server.sendReceiveAction(currentPlayer, "sayAndPlay", said);
-            state.pile.value = [...state.pile.value, played]
-        } catch(e) {
-            if (e === invalidStateException) {
-                state.status.value = "invalid"
-            }
+    function slap() {
+        if (state.value.status !== "valid") {
+            alert("Nuh uh!")
+            return
         }
+        server.sendReceiveAction(currentPlayer, "slap", null)
     }
 
     function SayAndPlayButton({ cardValue }) {
@@ -116,14 +137,15 @@
     }
 
     function App(props) {
-        const pile = state.pile.value
-        const topCard = pile.length > 0 ? pile[pile.length - 1] : null
+        const s = state.value;
+        const topCard = s.played[s.played.length - 1]
         return html`
             <div>
-                <div>Debug pile contents: ${pile}</div>
-                <div>${state.status.value}</div>
-                <div><strong>Top of pile</strong>: ${topCard}</div>
+                <div>Debug state: <pre>${JSON.stringify(s, null, 2)}</pre></div>
+                <div>${s.status}</div>
+                <div><strong>Top of played</strong>: ${topCard}</div>
                 <div>${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} />`)}</div>
+                <div><button onClick=${() => slap()}>Slap!</button></div>
             </div>`
     }
     
