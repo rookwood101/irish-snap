@@ -58,7 +58,7 @@
         }
 
         #expectedToSayNext() {
-            const saidLast = this.state.said[this.state.said.length - 1] ?? "K"
+            const saidLast = this.state.said[this.state.said.length - 1] ?? "King"
             return cardValues[(cardValues.indexOf(saidLast) + 1) % cardValues.length]
         }
 
@@ -67,7 +67,7 @@
             const playedLastLast = this.state.played[this.state.played.length - 2]?.[0] ?? NaN
             const playedLast = this.state.played[this.state.played.length - 1]?.[0] ?? NaN
 
-            return saidLast === playedLast || playedLastLast === playedLast || playedLast === "J"
+            return saidLast === playedLast || playedLastLast === playedLast || playedLast === "Jack"
         }
 
         #updateState(stateUpdater) {
@@ -77,6 +77,7 @@
             Object.values(this.state.players).forEach(player => {
                 player.updateState({
                     playedLast: this.state.played[this.state.played.length - 1],
+                    saidLast: this.state.said[this.state.said.length - 1],
                     handSize: player.hand.length,
                     status: this.state.status,
                 })
@@ -122,6 +123,7 @@
 
     const state = signal({
         playedLast: undefined,
+        saidLast: undefined,
         handSize: 0,
         status: "valid",
     })
@@ -161,11 +163,11 @@
             const valueIndex = cardValues.indexOf(value)
             const suitIndex = cardSuits.indexOf(suit)
 
-            let offset = 0
+            let unicodeOffset = 0
             if (["Queen", "King"].includes(value)) {
-                offset = 1 // skip "knight" card
+                unicodeOffset = 1 // skip "knight" card
             }
-            cardUnicode = String.fromCodePoint(0x1F0A1 + suitIndex*0x10 + valueIndex + offset)
+            cardUnicode = String.fromCodePoint(0x1F0A1 + suitIndex*0x10 + valueIndex + unicodeOffset)
             if (["Diamonds", "Hearts"].includes(suit)) {
                 color = "red"
             }
@@ -183,6 +185,7 @@
         return html`
             <div>
                 <div>${s.status}</div>
+                <div class="speech-bubble" style="visibility: ${s.saidLast ? "visible" : "hidden"}">${s.saidLast ?? "Nothing said"}</div>
                 <div><strong>Last played</strong>: <${PlayingCard} card=${s.playedLast} /></div>
                 <div>${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} />`)}</div>
                 <div><button onClick=${() => slap()}>Slap!</button></div>
