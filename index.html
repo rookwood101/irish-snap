@@ -129,7 +129,7 @@
     function updateState(newState) {
         state.value = newState
         if (state.value.status !== "valid") {
-            setTimeout(alert(state.value.status), 1)
+            setTimeout(() => alert(state.value.status), 1)
         }
     }
     const server = new Server(updateState)
