@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<meta charset="UTF-8">
 <script type="module">
     import { h, Component, render } from 'https://esm.sh/preact';
     import { signal } from "https://esm.sh/@preact/signals";
@@ -9,8 +10,8 @@
     const html = htm.bind(h);
 
     const invalidStateException = Symbol("Invalid State Exception")
-    const cardValues = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
-    const cardSuits = ["Clubs", "Spades", "Hearts", "Diamonds"]
+    const cardValues = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"]
+    const cardSuits = ["Spades", "Hearts", "Diamonds", "Clubs"]
     const allCards = cardValues.flatMap((v) => cardSuits.map((s) => [v, s]));
     class Server {
         constructor(clientUpdateState) {
@@ -61,14 +62,21 @@
             return cardValues[(cardValues.indexOf(saidLast) + 1) % cardValues.length]
         }
 
+        #shouldSlap() {
+            const saidLast = this.state.said[this.state.said.length - 1] ?? NaN
+            const playedLastLast = this.state.played[this.state.played.length - 2]?.[0] ?? NaN
+            const playedLast = this.state.played[this.state.played.length - 1]?.[0] ?? NaN
+
+            return saidLast === playedLast || playedLastLast === playedLast || playedLast === "J"
+        }
+
         #updateState(stateUpdater) {
             const newState = produce(this.state, stateUpdater)
             console.log(newState)
             this.state = newState
             Object.values(this.state.players).forEach(player => {
                 player.updateState({
-                    played: this.state.played,
-                    said: this.state.said,
+                    playedLast: this.state.played[this.state.played.length - 1],
                     handSize: player.hand.length,
                     status: this.state.status,
                 })
@@ -86,11 +94,23 @@
                     const expectedToSayNext = this.#expectedToSayNext()
 
                     this.#updateState(draftState => {
+                        if (this.#shouldSlap()) {
+                            draftState.status = `Somebody should've slapped!`
+                        }
                         const played = draftState.players[player].hand.pop()
                         draftState.played.push(played)
                         draftState.said.push(said)
                         if (said !== expectedToSayNext) {
-                            draftState.status = `You should've said ${expectedToSayNext}!`
+                            draftState.status = `Player ${player} should've said ${expectedToSayNext}!`
+                        }
+                    })
+                    break
+                case "slap":
+                    this.#updateState(draftState => {
+                        if (this.#shouldSlap()) {
+                            draftState.status = `Player ${player} slapped first!`
+                        } else {
+                            draftState.status = `Player ${player} shouldn't have slapped!`
                         }
                     })
                     break
@@ -101,8 +121,7 @@
     }
 
     const state = signal({
-        played: [],
-        said: [],
+        playedLast: undefined,
         handSize: 0,
         status: "valid",
     })
@@ -110,7 +129,7 @@
     function updateState(newState) {
         state.value = newState
         if (state.value.status !== "valid") {
-            alert(state.value.status)
+            setTimeout(alert(state.value.status), 1)
         }
     }
     const server = new Server(updateState)
@@ -132,18 +151,39 @@
         server.sendReceiveAction(currentPlayer, "slap", null)
     }
 
+    function PlayingCard({ card }) {
+        let cardUnicode = "🂿"
+        let color = "black"
+        if (card) {
+            const value = card[0]
+            const suit = card[1]
+
+            const valueIndex = cardValues.indexOf(value)
+            const suitIndex = cardSuits.indexOf(suit)
+
+            let offset = 0
+            if (["Queen", "King"].includes(value)) {
+                offset = 1 // skip "knight" card
+            }
+            cardUnicode = String.fromCodePoint(0x1F0A1 + suitIndex*0x10 + valueIndex + offset)
+            if (["Diamonds", "Hearts"].includes(suit)) {
+                color = "red"
+            }
+        }
+
+        return html`<span style="font-size: 1000%; color: ${color}">${cardUnicode}</span>`
+    }
+
     function SayAndPlayButton({ cardValue }) {
         return html`<button onClick=${() => sayAndPlay(cardValue)}>${cardValue}</button>`
     }
 
     function App(props) {
         const s = state.value;
-        const topCard = s.played[s.played.length - 1]
         return html`
             <div>
-                <div>Debug state: <pre>${JSON.stringify(s, null, 2)}</pre></div>
                 <div>${s.status}</div>
-                <div><strong>Top of played</strong>: ${topCard}</div>
+                <div><strong>Last played</strong>: <${PlayingCard} card=${s.playedLast} /></div>
                 <div>${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} />`)}</div>
                 <div><button onClick=${() => slap()}>Slap!</button></div>
             </div>`
