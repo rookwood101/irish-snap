@@ -22,20 +22,21 @@
                 played: [],
                 said: [],
                 players: {
-                    "a": {
+                    "😎": {
                         hand: hands[0],
                         updateState: clientUpdateState,
                     },
-                    "b": {
+                    "😴": {
                         hand: hands[1],
                         updateState: (_newState) => {},
                     },
-                    "c": {
+                    "🤑": {
                         hand: hands[2],
                         updateState: (_newState) => {},
                     }
                 },
             }
+            this.#updateState((draft) => draft)
         }
 
         #deal(numPlayers) {
@@ -78,7 +79,9 @@
                 player.updateState({
                     playedLast: this.state.played[this.state.played.length - 1],
                     saidLast: this.state.said[this.state.said.length - 1],
-                    handSize: player.hand.length,
+                    players: Object.fromEntries(Object.entries(this.state.players).map(
+                        ([playerName, playerData]) => [playerName, { handSize: playerData.hand.length }]
+                    )),
                     status: this.state.status,
                 })
             })
@@ -124,7 +127,7 @@
     const state = signal({
         playedLast: undefined,
         saidLast: undefined,
-        handSize: 0,
+        players: {},
         status: "valid",
     })
 
@@ -135,7 +138,7 @@
         }
     }
     const server = new Server(updateState)
-    const currentPlayer = "a"
+    const currentPlayer = "😎"
 
     function sayAndPlay(said) {
         if (state.value.status !== "valid") {
@@ -173,23 +176,76 @@
             }
         }
 
-        return html`<span style="font-size: 1000%; color: ${color}">${cardUnicode}</span>`
+        return html`<span style="color: ${color}">${cardUnicode}</span>`
     }
 
     function SayAndPlayButton({ cardValue }) {
         return html`<button onClick=${() => sayAndPlay(cardValue)}>${cardValue}</button>`
     }
 
+    function CardTable({ state, currentPlayer }) {
+        const players = state.players
+        const nPlayers = Object.keys(players).length
+        return html`
+            <div class="card-table" style="
+                width: min(80vw, 80vh);
+                aspect-ratio: 1 / 1;
+                border-radius: 50%;
+                background-color: darkgreen;
+                position: relative;
+                border: min(4.8vw, 4.8vh) solid saddlebrown;
+            ">
+                ${Object.entries(players).map(([playerName, playerData], i) => html`
+                    <div style="
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: rotate(${i*(360.0/nPlayers)}deg) translate(max(-40vw, -40vh));
+                    ">
+                        <div class="card-table-seat" style="
+                            font-size: min(8vw, 8vh);
+                            transform: rotate(-${i*(360.0/nPlayers)}deg) translate(-50%, -50%);
+                            background: white;
+                            border: min(1.6vw, 1.6vh) solid ${playerName === currentPlayer ? "black" : "saddlebrown"};
+                            border-radius: 50%;
+                            width: min(16vw, 16vh);
+                            aspect-ratio: 1 / 1;
+                            text-align: center;
+                            line-height: min(16vw, 16vh);
+                        ">
+                            ${playerName}
+                        </div>
+                    </div>
+                `)}
+                <div class="card-table-play-pile" style="
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: min(15vw, 15vh);
+                ">
+                    <${PlayingCard} card=${state.playedLast} />
+                </div>
+            </div>
+        `
+    }
+
     function App(props) {
         const s = state.value;
+        // TODO: who played last, validation for who should play next
         return html`
             <div>
-                <div>${s.status}</div>
+                <div style="
+                    display: flex;
+                    justify-content: center;
+                ">
+                    <${CardTable} state=${s} currentPlayer=${currentPlayer} />
+                </div>
                 <div class="speech-bubble" style="visibility: ${s.saidLast ? "visible" : "hidden"}">${s.saidLast ?? "Nothing said"}</div>
-                <div><strong>Last played</strong>: <${PlayingCard} card=${s.playedLast} /></div>
                 <div>${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} />`)}</div>
                 <div><button onClick=${() => slap()}>Slap!</button></div>
-            </div>`
+            </div>
+        `
     }
     
     render(html`<${App} />`, document.body);
