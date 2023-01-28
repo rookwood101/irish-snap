@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <meta charset="UTF-8">
+<title>Irish Snap!</title>
 <style>
     .card-table {
         width: min(80vw, 80vh);
@@ -46,6 +47,10 @@
         width: min(2vw, 2vh);
         height: min(1vw, 1vh);
         box-shadow:  min(0.7vw, 0.7vh) 0 0 white;
+    }
+
+    .playing-card {
+        width: min(10vw, 10vh);
     }
 </style>
 <script type="module">
@@ -107,9 +112,20 @@
             return result;
         }
 
+        /** The card value expected to be said next */
         #expectedToSayNext() {
             const saidLast = this.state.said[this.state.said.length - 1] ?? "King"
             return cardValues[(cardValues.indexOf(saidLast) + 1) % cardValues.length]
+        }
+
+        /** The player expected to play next */
+        #expectedToPlayNext() {
+            const playerOrder = Object.keys(this.state.players)
+            const lastSayAndPlay = this.state.moves.findLast((move) => move.action === "sayAndPlay")
+            if (lastSayAndPlay === undefined) {
+                return playerOrder[0]
+            }
+            return playerOrder[(playerOrder.indexOf(lastSayAndPlay.player) + 1) % playerOrder.length]
         }
 
         #shouldSlap() {
@@ -145,11 +161,9 @@
                 case "sayAndPlay":
                     const said = payload
                     const expectedToSayNext = this.#expectedToSayNext()
+                    const expectedToPlayNext = this.#expectedToPlayNext()
 
                     this.#updateState(draftState => {
-                        if (this.#shouldSlap()) {
-                            draftState.status = `Somebody should've slapped!`
-                        }
                         const played = draftState.players[player].hand.pop()
                         draftState.moves.push({
                             timestamp: new Date(),
@@ -160,8 +174,17 @@
                         })
                         draftState.played.push(played)
                         draftState.said.push(said)
+                        if (this.#shouldSlap()) {
+                            draftState.status = `Somebody should've slapped!`
+                            return
+                        }
+                        if (expectedToPlayNext !== player) {
+                            draftState.status = `Player ${expectedToPlayNext} should've gone, not you ${player}!\n`
+                            return
+                        }
                         if (said !== expectedToSayNext) {
-                            draftState.status = `Player ${player} should've said ${expectedToSayNext}!`
+                            draftState.status = `Player ${player} should've said ${expectedToSayNext}!\n`
+                            return
                         }
                     })
                     break
@@ -200,48 +223,45 @@
     }
     const server = new Server(updateState)
     const currentPlayer = "😎"
+    // preload card images
+    allCards.forEach((card) => {
+        new Image().src = getPlayingCardSvgPath(card)
+    })
 
-    function sayAndPlay(said) {
+    function sayAndPlay(player, said) {
         if (state.value.status !== "valid") {
             alert("Nuh uh!")
             return
         }
-        server.sendReceiveAction(currentPlayer, "sayAndPlay", said);
+        server.sendReceiveAction(player, "sayAndPlay", said);
     }
 
-    function slap() {
+    function slap(player) {
         if (state.value.status !== "valid") {
             alert("Nuh uh!")
             return
         }
-        server.sendReceiveAction(currentPlayer, "slap", null)
+        server.sendReceiveAction(player, "slap", null)
     }
 
-    function PlayingCard({ card }) {
-        let cardUnicode = "🂿"
-        let color = "black"
+    function getPlayingCardSvgPath(card) {
+        let svgIdentifier = "uu" // fallback
         if (card) {
             const value = card[0]
             const suit = card[1]
 
-            const valueIndex = cardValues.indexOf(value)
-            const suitIndex = cardSuits.indexOf(suit)
-
-            let unicodeOffset = 0
-            if (["Queen", "King"].includes(value)) {
-                unicodeOffset = 1 // skip "knight" card
-            }
-            cardUnicode = String.fromCodePoint(0x1F0A1 + suitIndex*0x10 + valueIndex + unicodeOffset)
-            if (["Diamonds", "Hearts"].includes(suit)) {
-                color = "red"
-            }
+            svgIdentifier = `${value === "10" ? "10" : value[0]}${suit[0]}`
         }
 
-        return html`<span style="color: ${color}">${cardUnicode}</span>`
+        return `images/Minicard_${svgIdentifier}.svg`
     }
 
-    function SayAndPlayButton({ cardValue }) {
-        return html`<button onClick=${() => sayAndPlay(cardValue)}>${cardValue}</button>`
+    function PlayingCard({ card }) {
+        return html`<img class="playing-card" src=${getPlayingCardSvgPath(card)} />`
+    }
+
+    function SayAndPlayButton({ cardValue, forPlayer }) {
+        return html`<button onClick=${() => sayAndPlay(forPlayer, cardValue)}>${cardValue}</button>`
     }
 
     function CardTable({ state, currentPlayer }) {
@@ -295,8 +315,11 @@
                 ">
                     <${CardTable} state=${s} currentPlayer=${currentPlayer} />
                 </div>
-                <div>${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} />`)}</div>
-                <div><button onClick=${() => slap()}>Slap!</button></div>
+                ${Object.keys(s.players).map(player => html`
+                    <div>${player}</div>
+                    <div>${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} forPlayer=${player} />`)}</div>
+                    <div><button onClick=${() => slap(player)}>Slap!</button></div>
+                `)}
             </div>
         `
     }
