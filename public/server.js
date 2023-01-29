@@ -108,6 +108,7 @@ class IrishSnapServer {
     }
 
     onMove(playerId, move, payload) {
+        const playerName = this.playerName(playerId)
         switch (move) {
             case "sayAndPlay":
                 if (this.state.status !== "valid") {
@@ -116,7 +117,6 @@ class IrishSnapServer {
                 const said = payload
                 const expectedToSayNext = this.#expectedToSayNext()
                 const expectedToPlayNext = this.#expectedToPlayNext()
-                const playerName = this.playerName(playerId)
 
                 this.#updateState(draftState => {
                     const played = draftState.players[playerId].hand.pop()
