@@ -2,11 +2,12 @@
   "name": "irish-snap",
   "version": "0.1.0",
   "scripts": {
-    "start": "node server.js"
+    "start": "node public/server.js"
   },
   "type": "module",
   "dependencies": {
     "express": "^4.18.2",
+    "immer": "^9.0.19",
     "socket.io": "^4.5.4"
   },
   "engines": {
