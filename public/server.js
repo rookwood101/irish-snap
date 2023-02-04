@@ -79,6 +79,7 @@ class IrishSnapServer {
                 },
                 lastMove: this.state.moves[this.state.moves.length - 1],
                 playedLast: this.state.played[this.state.played.length - 1],
+                stackSize: this.state.played.length,
                 players: Object.fromEntries(Object.entries(this.state.players).map(
                     ([playerId, playerData]) => [playerId, { name: playerData.name, handSize: playerData.hand.length }]
                 )),

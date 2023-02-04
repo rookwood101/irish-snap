@@ -3,34 +3,38 @@
 <title>Irish Snap!</title>
 <style>
     .card-table {
-        width: min(80vw, 80vh);
+        width: 80vmin;
         aspect-ratio: 1 / 1;
         border-radius: 50%;
         background-color: darkgreen;
         position: relative;
-        border: min(4.8vw, 4.8vh) solid saddlebrown;
-        font-size: min(2vw, 2vh);
+        border: 4.8vmin solid saddlebrown;
+        font-size: 2vmin;
         font-family: sans-serif;
     }
 
     .card-table-player-name {
-        font-size: min(8vw, 8vh);
+        font-size: 8vmin;
     }
 
-    .card-table-play-pile {
+    .card-table-stack {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        font-size: min(15vw, 15vh);
+        font-size: 15vmin;
+    }
+
+    .card-table-stack * {
+        transform-style: preserve-3d;
     }
 
     .speech-bubble {
         position: absolute;
         bottom: 0;
         right: 0;
-        width: min(5vw, 5vh);
-        height: min(2.5vw, 2.5vh);
+        width: 5vmin;
+        height: 2.5vmin;
         border-radius: 50%;
         background: white;
         filter: drop-shadow(1px 1px 0 #000) drop-shadow(-1px 1px 0 #000) drop-shadow(1px -1px 0 #000) drop-shadow(-1px -1px 0 #000);
@@ -44,13 +48,13 @@
         top: -20%;
         left: -20%;
         border-radius: 0% 100% 0 0;
-        width: min(2vw, 2vh);
-        height: min(1vw, 1vh);
-        box-shadow:  min(0.7vw, 0.7vh) 0 0 white;
+        width: 2vmin;
+        height: 1vmin;
+        box-shadow:  0.7vmin 0 0 white;
     }
 
-    .playing-card {
-        width: min(10vw, 10vh);
+    .playing-card-stack {
+        width: 10vmin;
     }
 
     li {
@@ -82,6 +86,7 @@
         },
         lastMove: undefined,
         playedLast: undefined,
+        stackSize: 0,
         players: {},
         status: "Need to deal out the cards",
     })
@@ -153,8 +158,12 @@
         return `images/Minicard_${svgIdentifier}.svg`
     }
 
-    function PlayingCard({ card }) {
-        return html`<img class="playing-card" src=${getPlayingCardSvgPath(card)} />`
+    function PlayingCardStack({ topCard, size }) {
+        // TODO: use a cuboid constructed in 3d to represent cards
+        const offset = size * 0.1
+        return html`<img class="playing-card-stack" src=${getPlayingCardSvgPath(topCard)} style="
+            filter: drop-shadow(${offset}vmin ${offset}vmin 0 #242);
+        "/>`
     }
 
     function SayAndPlayButton({ cardValue }) {
@@ -177,15 +186,16 @@
                         <div class="card-table-seat" style="
                             transform: rotate(-${i*(360.0/nPlayers)}deg) translate(-50%, -50%);
                             background: white;
-                            border: min(1.6vw, 1.6vh) solid ${playerId === myPlayerId ? "black" : "saddlebrown"};
+                            border: 1.6vmin solid ${playerId === myPlayerId ? "black" : "saddlebrown"};
                             border-radius: 50%;
-                            width: min(16vw, 16vh);
-                            height: min(16vw, 16vh);
+                            width: 16vmin;
+                            height: 16vmin;
                             display: flex;
                             align-items: center;
                             justify-content: center;
                         ">
-                            <span class="card-table-player-name" style="">${playerData.name}</span>
+                            <${PlayingCardStack} topCard=${undefined} size=${playerData.handSize} />
+                            <span class="card-table-player-name">${playerData.name}</span>
                             ${state.lastMove?.action === "sayAndPlay" && state.lastMove?.player === playerId && html`
                                 <div class="speech-bubble">
                                     ${state.lastMove?.player === playerId ? state.lastMove?.said : undefined}
@@ -194,8 +204,8 @@
                         </div>
                     </div>
                 `)}
-                <div class="card-table-play-pile">
-                    <${PlayingCard} card=${state.playedLast} />
+                <div class="card-table-stack">
+                    <${PlayingCardStack} topCard=${state.playedLast} size=${state.stackSize} />
                 </div>
             </div>
         `
