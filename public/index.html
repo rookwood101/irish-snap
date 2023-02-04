@@ -111,10 +111,11 @@
         }
     })
     const regex_emoji = /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F9B0}-\u{1F9B3}]/u
-    let currentPlayer
-    do {
+    let currentPlayer = localStorage.getItem("username")
+    while (!regex_emoji.test(currentPlayer)) {
         currentPlayer = [...prompt("Choose an emoji for your username (win+. to open emoji picker):")][0]
-    } while (!regex_emoji.test(currentPlayer))
+    }
+    localStorage.setItem("username", currentPlayer)
     
     // preload card images
     allCards.forEach((card) => {
