@@ -5,6 +5,7 @@
 <style>
     body {
         touch-action: manipulation;
+        font-size: 2vmin;
     }
 
     .card-table {
@@ -14,7 +15,6 @@
         background-color: darkgreen;
         position: relative;
         border: 4.8vmin solid saddlebrown;
-        font-size: 2vmin;
         font-family: sans-serif;
     }
 
@@ -126,14 +126,25 @@
         width: 12vmin;
     }
 
-    li {
+    .message-feed {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 20vmin;
+        margin: 1vmin;
+        padding: 1vmin;
+        background-color: rgba(255, 255, 255, 0.6);
+    }
+
+    .message-feed li {
         list-style-type: none;
+        margin: 0;
     }
 
     button {
         width: 2cm;
         height: 2cm;
-        margin: 0.5cm;
+        margin: 0;
     }
 </style>
 <script type="module">
@@ -318,8 +329,8 @@
                         <div>${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} />`)}<button onClick=${() => slap()}>Slap!</button>
                             <button onClick=${() => deal()}>Deal</button></div>
                     </div>
-                    <ul>
-                        ${messageFeed.value.map((message) => html`<li>${message}</li>`)}
+                    <ul class="message-feed">
+                        ${messageFeed.value.slice(0, 5).map((message) => html`<li>${message}</li>`)}
                     </ul>
                 </div>
             </div>
