@@ -21,12 +21,8 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(2);
         font-size: 15vmin;
-    }
-
-    .card-table-stack * {
-        transform-style: preserve-3d;
     }
 
     .speech-bubble {
@@ -53,8 +49,17 @@
         box-shadow:  0.7vmin 0 0 white;
     }
 
+    .playing-card-stack-wrapper {
+        filter: drop-shadow(1px 0px 0 #000) drop-shadow(0px 1px 0 #000);
+    }
+
     .playing-card-stack {
-        width: 10vmin;
+        --color: dimgrey;
+        filter: 
+            drop-shadow(var(--offset) var(--offset) 0 var(--color)) 
+            drop-shadow(calc(var(--offset) / 3) calc(var(--offset) / 3) 0 var(--color))
+            drop-shadow(calc(2 * var(--offset) / 3) calc(2 * var(--offset) / 3) 0 var(--color))
+        ;
     }
 
     li {
@@ -96,7 +101,6 @@
         messageFeed.value = [message, ...messageFeed.value]
     }
 
-    let playerId = undefined
     socket.on("connect", () => {
         socket.emit("join", {
             name: currentPlayer,
@@ -105,6 +109,7 @@
     })
     
     socket.on("updateState", (newState) => {
+        console.log(newState)
         state.value = newState
         if (state.value.status !== "valid") {
             alertMessage(state.value.status)
@@ -149,7 +154,10 @@
 
     function getPlayingCardSvgPath(card) {
         let svgIdentifier = "uu" // fallback
-        if (card) {
+        if (card === "back") {
+            svgIdentifier = "back"
+        }
+        else if (card) {
             const value = card[0]
             const suit = card[1]
 
@@ -160,11 +168,19 @@
     }
 
     function PlayingCardStack({ topCard, size }) {
-        // TODO: use a cuboid constructed in 3d to represent cards
-        const offset = size * 0.1
-        return html`<img class="playing-card-stack" src=${getPlayingCardSvgPath(topCard)} style="
-            filter: drop-shadow(${offset}vmin ${offset}vmin 0 #242);
-        "/>`
+        if (!topCard) {
+            return null
+        }
+        const maxOffset = 7
+        const maxCards = 52
+        const offset = size * (maxOffset / maxCards)
+        return html`
+            <div class="playing-card-stack-wrapper">
+                <img class="playing-card-stack" src=${getPlayingCardSvgPath(topCard)} style="
+                    --offset: ${offset}px
+                "/>
+            </div>
+        `
     }
 
     function SayAndPlayButton({ cardValue }) {
@@ -195,7 +211,7 @@
                             align-items: center;
                             justify-content: center;
                         ">
-                            <${PlayingCardStack} topCard=${undefined} size=${playerData.handSize} />
+                            <${PlayingCardStack} topCard="back" size=${playerData.handSize} />
                             <span class="card-table-player-name">${playerData.name}</span>
                             ${state.lastMove?.action === "sayAndPlay" && state.lastMove?.player === playerId && html`
                                 <div class="speech-bubble">
