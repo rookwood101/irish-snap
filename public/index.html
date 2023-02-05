@@ -13,6 +13,22 @@
         font-family: sans-serif;
     }
 
+    .card-table-seat-wrapper {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+    }
+
+    .card-table-seat {
+        background: white;
+        border-radius: 50%;
+        width: 16vmin;
+        height: 16vmin;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     .card-table-player-name {
         font-size: 8vmin;
     }
@@ -21,8 +37,39 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%) scale(2);
+        transform: translate(-50%, -50%);
         font-size: 15vmin;
+    }
+
+    .card-table-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: forestgreen;
+        border-radius: 50%;
+        width: 40vmin;
+        aspect-ratio: 1 / 1;
+    }
+
+    .player-one-token {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 2.5vmin;
+        height: 2.5vmin;
+        border-radius: 50%;
+        background: white;
+        border: 0.5vmin solid black;
+        text-align: center;
+        font-size: 1.5vmin;
+    }
+
+    .player-one-token div {
+        top: 50%;
+        left: 50%;
+        position: relative;
+        transform: translate(-50%, -50%);
     }
 
     .speech-bubble {
@@ -33,7 +80,11 @@
         height: 2.5vmin;
         border-radius: 50%;
         background: white;
-        filter: drop-shadow(1px 1px 0 #000) drop-shadow(-1px 1px 0 #000) drop-shadow(1px -1px 0 #000) drop-shadow(-1px -1px 0 #000);
+        filter:
+            drop-shadow(0.1vmin 0.1vmin 0 #000)
+            drop-shadow(-0.1vmin 0.1vmin 0 #000)
+            drop-shadow(0.1vmin -0.1vmin 0 #000)
+            drop-shadow(-0.1vmin -0.1vmin 0 #000);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -50,7 +101,7 @@
     }
 
     .playing-card-stack-wrapper {
-        filter: drop-shadow(1px 0px 0 #000) drop-shadow(0px 1px 0 #000);
+        filter: drop-shadow(0.15vmin 0px 0 #000) drop-shadow(0px 0.15vmin 0 #000);
     }
 
     .playing-card-stack {
@@ -62,13 +113,22 @@
         ;
     }
 
+    .card-table-seat-hand .playing-card-stack {
+        width: 6vmin;
+    }
+
+    .card-table-stack .playing-card-stack {
+        width: 12vmin;
+    }
+
     li {
         list-style-type: none;
     }
 
     button {
-        font-size: 300%;
-        margin: 5px;
+        width: 2cm;
+        height: 2cm;
+        margin: 0.5cm;
     }
 </style>
 <script type="module">
@@ -171,13 +231,13 @@
         if (!topCard) {
             return null
         }
-        const maxOffset = 7
+        const maxOffset = 0.7
         const maxCards = 52
         const offset = size * (maxOffset / maxCards)
         return html`
             <div class="playing-card-stack-wrapper">
                 <img class="playing-card-stack" src=${getPlayingCardSvgPath(topCard)} style="
-                    --offset: ${offset}px
+                    --offset: ${offset}vmin
                 "/>
             </div>
         `
@@ -194,33 +254,33 @@
         return html`
             <div class="card-table">
                 ${Object.entries(players).map(([playerId, playerData], i) => html`
-                    <div style="
-                        position: absolute;
-                        top: 50%;
-                        left: 50%;
-                        transform: rotate(${i*(360.0/nPlayers)}deg) translate(max(-40vw, -40vh));
+                    <div class="card-table-seat-wrapper" style="
+                        transform: rotate(${i*(360.0/nPlayers)}deg) translate(-40vmin);
                     ">
                         <div class="card-table-seat" style="
                             transform: rotate(-${i*(360.0/nPlayers)}deg) translate(-50%, -50%);
-                            background: white;
                             border: 1.6vmin solid ${playerId === myPlayerId ? "black" : "saddlebrown"};
-                            border-radius: 50%;
-                            width: 16vmin;
-                            height: 16vmin;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
                         ">
-                            <${PlayingCardStack} topCard="back" size=${playerData.handSize} />
                             <span class="card-table-player-name">${playerData.name}</span>
                             ${state.lastMove?.action === "sayAndPlay" && state.lastMove?.player === playerId && html`
                                 <div class="speech-bubble">
                                     ${state.lastMove?.player === playerId ? state.lastMove?.said : undefined}
                                 </div>
                             `}
+                            ${i === 0 && html`<div class="player-one-token"><div>1st</div></div>`}
+                        </div>
+                    </div>
+                    <div class="card-table-seat-wrapper" style="
+                        transform: rotate(${i*(360.0/nPlayers)}deg) translate(-25vmin);
+                    ">
+                        <div class="card-table-seat-hand" style="
+                            transform: rotate(-${i*(360.0/nPlayers)}deg) translate(-50%, -50%);
+                        ">
+                            <${PlayingCardStack} topCard="back" size=${playerData.handSize} />
                         </div>
                     </div>
                 `)}
+                <div class="card-table-center" />
                 <div class="card-table-stack">
                     <${PlayingCardStack} topCard=${state.playedLast} size=${state.stackSize} />
                 </div>
@@ -250,11 +310,8 @@
                 ">
                     <div>
                         <div>${s.currentPlayer.name} controls</div>
-                        <div>${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} />`)}</div>
-                        <div>
-                            <button onClick=${() => slap()}>Slap!</button>
-                            <button onClick=${() => deal()}>Deal</button>
-                        </div>
+                        <div>${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} />`)}<button onClick=${() => slap()}>Slap!</button>
+                            <button onClick=${() => deal()}>Deal</button></div>
                     </div>
                     <ul>
                         ${messageFeed.value.map((message) => html`<li>${message}</li>`)}
