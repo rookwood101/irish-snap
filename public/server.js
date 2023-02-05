@@ -3,7 +3,7 @@ import { createServer } from "http"
 import { Server } from "socket.io"
 import { produce } from "immer"
 
-import { cardValues, cardSuits, allCards } from "./shared.js"
+import { cardValues, deal } from "./shared.js"
 
 const app = express()
 const server = createServer(app)
@@ -21,26 +21,7 @@ class IrishSnapServer {
             said: [],
             players: {},
         }
-        this.#updateState((draft) => draft)
-    }
-
-    #deal(numPlayers) {
-        const deck = allCards.slice()
-        this.#shuffleArray(deck)
-        return this.#splitArray(deck, numPlayers)
-    }
-    #shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-    }
-    #splitArray(array, nChunks) {
-        let result = [];
-        for (let i = nChunks; i > 0; i--) {
-            result.push(array.splice(0, Math.ceil(array.length / i)));
-        }
-        return result;
+        this.#deal()
     }
 
     /** The card value expected to be said next */
@@ -96,16 +77,32 @@ class IrishSnapServer {
                 updateState: stateUpdater,
             }
         })
+        this.#deal()
     }
 
     removePlayer(id) {
         this.#updateState((draftState) => {
             delete draftState.players[id]
         })
+        this.#deal()
     }
 
     playerName(playerId) {
         return this.state.players[playerId]?.name
+    }
+
+    #deal() {
+        this.#updateState(draftState => {
+            const playerIds = Object.keys(draftState.players)
+            const hands = deal(playerIds.length)
+            playerIds.forEach((playerId, i) => {
+                draftState.players[playerId].hand = hands[i]
+            })
+            draftState.moves = []
+            draftState.played = []
+            draftState.said = []
+            draftState.status = "valid"
+        })
     }
 
     onMove(playerId, move, payload) {
@@ -162,17 +159,7 @@ class IrishSnapServer {
                 })
                 break
             case "deal":
-                this.#updateState(draftState => {
-                    const playerIds = Object.keys(draftState.players)
-                    const hands = this.#deal(playerIds.length)
-                    playerIds.forEach((playerId, i) => {
-                        draftState.players[playerId].hand = hands[i]
-                    })
-                    draftState.moves = []
-                    draftState.played = []
-                    draftState.said = []
-                    draftState.status = "valid"
-                })
+                this.#deal()
                 break
             default:
                 break
