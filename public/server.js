@@ -54,7 +54,7 @@ class IrishSnapServer {
                             break
                         case Phase.Slapping:
                             StateTransitions.uncheckedSayAndPlay(draftState, playerId, payload)
-                            StateTransitions.foul(draftState, playerId, `${StateQueries.playerName(playerId)} played a card when they should've slapped!`)
+                            StateTransitions.foul(draftState, playerId, `${StateQueries.playerName(draftState, playerId)} played a card when they should've slapped!`)
                             break
                         default:
                             break
