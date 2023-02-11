@@ -1,8 +1,21 @@
 export const cardValues = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"]
 export const cardSuits = ["Spades", "Hearts", "Diamonds", "Clubs"]
 export const allCards = cardValues.flatMap((v) => cardSuits.map((s) => [v, s]));
+export const Phase = Object.freeze({
+    WaitingForPlayers: "WaitingForPlayers",
+    Playing: "Playing",
+    Slapping: "Slapping",
+    Fouling: "Fouling",
+    Erroring: "Erroring",
+    Winning: "Winning",
+})
+export const Move = Object.freeze({
+    SayAndPlay: "SayAndPlay",
+    Slap: "Slap",
+    Deal: "Deal",
+})
 
-export function deal(numPlayers) {
+export function createHands(numPlayers) {
     const deck = allCards.slice()
     shuffleArray(deck)
     return splitArray(deck, numPlayers)

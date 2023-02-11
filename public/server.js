@@ -3,7 +3,9 @@ import { createServer } from "http"
 import { Server } from "socket.io"
 import { produce } from "immer"
 
-import { cardValues, deal } from "./shared.js"
+import { Move, Phase } from "./shared.js"
+import * as StateTransitions from "./stateTransitions.js"
+import * as StateQueries from "./stateQueries.js"
 
 const app = express()
 const server = createServer(app)
@@ -13,39 +15,8 @@ app.use(express.static("public"))
 
 class IrishSnapServer {
     constructor() {
-        // initial state
-        this.state = {
-            status: "Need to deal out the cards",
-            moves: [],
-            played: [],
-            said: [],
-            players: {},
-        }
-        this.#deal()
-    }
-
-    /** The card value expected to be said next */
-    #expectedToSayNext() {
-        const saidLast = this.state.said[this.state.said.length - 1] ?? "King"
-        return cardValues[(cardValues.indexOf(saidLast) + 1) % cardValues.length]
-    }
-
-    /** The player expected to play next */
-    #expectedToPlayNext() {
-        const playerOrder = Object.keys(this.state.players)
-        const lastSayAndPlay = this.state.moves.slice().reverse().find((move) => move.action === "sayAndPlay")
-        if (lastSayAndPlay === undefined) {
-            return playerOrder[0]
-        }
-        return playerOrder[(playerOrder.indexOf(lastSayAndPlay.player) + 1) % playerOrder.length]
-    }
-
-    #shouldSlap() {
-        const saidLast = this.state.said[this.state.said.length - 1] ?? NaN
-        const playedLastLast = this.state.played[this.state.played.length - 2]?.[0] ?? NaN
-        const playedLast = this.state.played[this.state.played.length - 1]?.[0] ?? NaN
-
-        return saidLast === playedLast || playedLastLast === playedLast || playedLast === "Jack"
+        this.state = {}
+        StateTransitions.initialise(this.state)
     }
 
     #updateState(stateUpdater) {
@@ -53,117 +24,59 @@ class IrishSnapServer {
         console.log(newState)
         this.state = newState
         Object.entries(this.state.players).forEach(([playerId, player]) => {
-            player.updateState({
-                currentPlayer: {
-                    id: playerId,
-                    name: player.name,
-                },
-                lastMove: this.state.moves[this.state.moves.length - 1],
-                playedLast: this.state.played[this.state.played.length - 1],
-                stackSize: this.state.played.length,
-                players: Object.fromEntries(Object.entries(this.state.players).map(
-                    ([playerId, playerData]) => [playerId, { name: playerData.name, handSize: playerData.hand.length }]
-                )),
-                status: this.state.status,
-            })
+            player.updateState(StateQueries.clientState(this.state, playerId))
         })
     }
 
     addPlayer(id, playerName, stateUpdater) {
         this.#updateState((draftState) => {
-            draftState.players[id] = {
-                name: playerName,
-                hand: [],
-                updateState: stateUpdater,
-            }
+            StateTransitions.addPlayer(draftState, id, playerName, stateUpdater)
         })
-        this.#deal()
     }
 
     removePlayer(id) {
         this.#updateState((draftState) => {
-            delete draftState.players[id]
+            StateTransitions.removePlayer(draftState, id)
         })
-        this.#deal()
     }
 
-    playerName(playerId) {
-        return this.state.players[playerId]?.name
-    }
-
-    #deal() {
-        this.#updateState(draftState => {
-            const playerIds = Object.keys(draftState.players)
-            const hands = deal(playerIds.length)
-            playerIds.forEach((playerId, i) => {
-                draftState.players[playerId].hand = hands[i]
-            })
-            draftState.moves = []
-            draftState.played = []
-            draftState.said = []
-            draftState.status = "valid"
-        })
+    playerName(id) {
+        return StateQueries.playerName(this.state, id)
     }
 
     onMove(playerId, move, payload) {
-        const playerName = this.playerName(playerId)
-        switch (move) {
-            case "sayAndPlay":
-                if (this.state.status !== "valid") {
-                    return
-                }
-                const said = payload
-                const expectedToSayNext = this.#expectedToSayNext()
-                const expectedToPlayNext = this.#expectedToPlayNext()
-
-                this.#updateState(draftState => {
-                    const played = draftState.players[playerId].hand.pop()
-                    draftState.moves.push({
-                        timestamp: new Date(),
-                        action: move,
-                        played,
-                        said,
-                        player: playerId,
-                    })
-                    draftState.played.push(played)
-                    draftState.said.push(said)
-                    if (this.#shouldSlap()) {
-                        draftState.status = `Somebody should've slapped!`
-                        return
+        this.#updateState(draftState => {
+            switch (move) {
+                case Move.SayAndPlay:
+                    switch (this.state.phase) {
+                        case Phase.Playing:
+                            StateTransitions.sayAndPlay(draftState, playerId, payload)
+                            break
+                        case Phase.Slapping:
+                            StateTransitions.uncheckedSayAndPlay(draftState, playerId, payload)
+                            StateTransitions.foul(draftState, playerId, `${StateQueries.playerName(playerId)} played a card when they should've slapped!`)
+                            break
+                        default:
+                            break
                     }
-                    if (expectedToPlayNext !== playerId) {
-                        draftState.status = `Player ${this.playerName(expectedToPlayNext)} should've gone, not you ${playerName ?? "unknown player"}!\n`
-                        return
+                    break
+                case Move.Slap:
+                    switch (this.state.phase) {
+                        case Phase.Playing:
+                            StateTransitions.slap(draftState, playerId)
+                            break
+                        case Phase.Slapping:
+                            StateTransitions.slap(draftState, playerId)
+                            break
+                        default:
+                            break
                     }
-                    if (said !== expectedToSayNext) {
-                        draftState.status = `Player ${playerName} should've said ${expectedToSayNext}!\n`
-                        return
-                    }
-                })
-                break
-            case "slap":
-                if (this.state.status !== "valid") {
-                    return
-                }
-                this.#updateState(draftState => {
-                    draftState.moves.push({
-                        timestamp: new Date(),
-                        action: move,
-                        player: playerId,
-                    })
-                    if (this.#shouldSlap()) {
-                        draftState.status = `Player ${playerName} slapped first!`
-                    } else {
-                        draftState.status = `Player ${playerName} shouldn't have slapped!`
-                    }
-                })
-                break
-            case "deal":
-                this.#deal()
-                break
-            default:
-                break
-        }
+                    break
+                default:
+                    break
+            }
+        })
+        
     }
 }
 
