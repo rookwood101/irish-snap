@@ -123,6 +123,14 @@ function CardTable({ state }) {
                         <${PlayingCardStack} topCard="back" size=${playerData.handSize} />
                     </div>
                 </div>
+                <div class="card-table-seat-wrapper" style="
+                    transform: translate(-50%, -50%) rotate(${i*(360.0/nPlayers)}deg) translate(-40vmin);
+                    z-index: ${100+playerData.isSlapping};
+                ">
+                    <div class="slapper ${playerData.isSlapping ? " slapping" : ""}">
+                        🤚\u{FE0F}
+                    </div>
+                </div>
             `)}
             <div class="card-table-center" />
             <div class="card-table-stack">

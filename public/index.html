@@ -154,5 +154,71 @@
         position: absolute;
         background-color: white;
     }
+
+    .slapper {
+        visibility: hidden;
+        /* transition: transform 0.2s ease-in; */
+        transform: rotate(90deg) translate(0, 0) rotateX(50deg);
+        font-size: 15vmin;
+        width: 30vmin;
+        height: 30vmin;
+        text-align: center;
+        line-height: 30vmin;
+    }
+
+    .slapping {
+        visibility: visible;
+        animation: 0.1s ease-in 1 slap;
+        transform: rotate(90deg) translate(0, -40vmin);
+    }
+
+    @keyframes slap {
+        from {
+            transform: rotate(90deg) translate(0, 0) rotateX(50deg);
+        }
+
+        90% {
+            transform: rotate(90deg) translate(0, -36vmin) rotateX(50deg);
+        }
+
+        to {
+            transform: rotate(90deg) translate(0, -40vmin) rotateX(0deg);
+        }
+    }
+
+    .slapper::after {
+        content: ' ';
+        display: block;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background: url("images/slap_background.svg") no-repeat;
+        background-position: 50% 50%;
+        background-repeat: no-repeat;
+        background-size: cover;
+    }
+
+    .slapping::after {
+        animation: 0.7s linear 0.1s 1 slap-bg;
+        opacity: 0;
+    }
+
+    @keyframes slap-bg {
+        from {
+            background-size: 0% 0%;
+            opacity: 1;
+        }
+
+        50% {
+            background-size: 100% 100%;
+            opacity: 1;
+        }
+
+        to {
+            opacity: 0;
+        }
+    }
 </style>
 <script type="module" src="./client.js"></script>

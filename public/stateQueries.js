@@ -55,7 +55,7 @@ export function clientState(state, playerId) {
                 name: playerData.name,
                 handSize: playerData.hand.length,
                 isStartingPlayer: playerData.isStartingPlayer,
-                isSlapping: state.slapped.includes(playerId),
+                isSlapping: state.slapped.indexOf(playerId) + 1, // TODO: this is not the right place to do this
             }]
         )),
         eventLog: state.eventLog,

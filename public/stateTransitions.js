@@ -22,8 +22,8 @@ export function newRound(draftState) {
 
     advanceStartingPlayer(draftState)
     const startingPlayerName = StateQueries.playerName(draftState, StateQueries.startingPlayer(draftState))
-    // too noisy in the log
-    // event(draftState, `Round ${StateQueries.roundNumber(draftState)}. Starting player: ${startingPlayerName}`)
+    // too noisy in the log, but now that we delay, ok
+    event(draftState, `Round ${StateQueries.roundNumber(draftState)}. Starting player: ${startingPlayerName}`)
 
     // stay the same:
     // draftState.players
@@ -89,7 +89,8 @@ export function foul(draftState, playerId, reason) {
     draftState.phase = Phase.Fouling
     draftState.eventLog.push(reason)
 
-    newRound(draftState)
+    // TODO: the handling of new rounds outside of this makes me uneasy
+    // newRound(draftState)
 }
 
 export function sayAndPlay(draftState, playerId, said) {

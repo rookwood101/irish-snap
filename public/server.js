@@ -44,6 +44,10 @@ class IrishSnapServer {
         return StateQueries.playerName(this.state, id)
     }
 
+    newRound() {
+        this.#updateState(StateTransitions.newRound)
+    }
+
     onMove(playerId, move, payload) {
         this.#updateState(draftState => {
             switch (move) {
@@ -74,6 +78,9 @@ class IrishSnapServer {
                     break
                 default:
                     break
+            }
+            if (draftState.phase === Phase.Fouling) {
+                setTimeout(() => {this.newRound()}, 3000)
             }
         })
         
