@@ -60,5 +60,6 @@ export function clientState(state, playerId) {
         )),
         eventLog: state.eventLog,
         roundNumber: roundNumber(state),
+        phase: state.phase,
     }
 }

@@ -3,9 +3,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Irish Snap!</title>
 <style>
+    html {
+        font-size: 1em;
+    }
+
     body {
         touch-action: manipulation;
-        font-size: 2vmin;
     }
 
     .card-table {
@@ -61,13 +64,13 @@
         position: absolute;
         top: 0;
         right: 0;
-        width: 2.5vmin;
-        height: 2.5vmin;
+        width: 1.5rem;
+        height: 1.5rem;
         border-radius: 50%;
         background: white;
         border: 0.5vmin solid black;
         text-align: center;
-        font-size: 1.5vmin;
+        font-size: 1rem;
     }
 
     .player-one-token div {
@@ -81,15 +84,15 @@
         position: absolute;
         bottom: 0;
         right: 0;
-        width: 5vmin;
-        height: 2.5vmin;
+        width: 3rem;
+        height: 1.5rem;
         border-radius: 50%;
         background: white;
         filter:
-            drop-shadow(0.1vmin 0.1vmin 0 #000)
-            drop-shadow(-0.1vmin 0.1vmin 0 #000)
-            drop-shadow(0.1vmin -0.1vmin 0 #000)
-            drop-shadow(-0.1vmin -0.1vmin 0 #000);
+            drop-shadow(0.06rem 0.06rem 0 #000)
+            drop-shadow(-0.06rem 0.06rem 0 #000)
+            drop-shadow(0.06rem -0.06rem 0 #000)
+            drop-shadow(-0.06rem -0.06rem 0 #000);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -100,9 +103,9 @@
         top: -20%;
         left: -20%;
         border-radius: 0% 100% 0 0;
-        width: 2vmin;
-        height: 1vmin;
-        box-shadow:  0.7vmin 0 0 white;
+        width: 1.2rem;
+        height: 0.6rem;
+        box-shadow:  0.42rem 0 0 white;
     }
 
     .playing-card-stack-wrapper {
@@ -130,11 +133,11 @@
         position: absolute;
         top: 0;
         right: 0;
-        width: 20vmin;
-        margin: 1vmin;
-        padding: 1vmin;
+        width: 12rem;
+        margin: 0.6rem;
+        padding: 0.6rem;
         background-color: rgba(255, 255, 255, 0.6);
-        font-size: 1vmin;
+        font-size: 1rem;
     }
 
     .message-feed li {
@@ -146,17 +149,24 @@
         width: 2cm;
         height: 2cm;
         margin: 0;
+        font-size: 1rem;
     }
 
     .winning-message {
-        z-index: 100;
-        font-size: 5vmin;
+        z-index: 200;
+        font-size: 3rem;
         position: absolute;
         background-color: white;
+        border-radius: 2rem;
+        padding: 1rem;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        border: 0.5rem black solid;
     }
 
     .slapper {
-        visibility: hidden;
+        display: none;
         /* transition: transform 0.2s ease-in; */
         transform: rotate(90deg) translate(0, 0) rotateX(50deg);
         font-size: 15vmin;
@@ -167,7 +177,7 @@
     }
 
     .slapping {
-        visibility: visible;
+        display: block;
         animation: 0.1s ease-in 1 slap;
         transform: rotate(90deg) translate(0, -40vmin);
     }
