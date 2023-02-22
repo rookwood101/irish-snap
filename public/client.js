@@ -81,14 +81,28 @@ function PlayingCardStack({ topCard, size }) {
     return html`
         <div class="playing-card-stack-wrapper">
             <img class="playing-card-stack" src=${getPlayingCardSvgPath(topCard)} style="
-                --offset: ${offset}vmin
+                --offset: ${offset}cqw
             "/>
         </div>
     `
 }
 
 function SayAndPlayButton({ cardValue }) {
-    return html`<button onClick=${() => sayAndPlay(cardValue)}>${cardValue}</button>`
+    return html`<button class="say-and-play-button" onClick=${() => sayAndPlay(cardValue)}>${cardValue}</button>`
+}
+
+function OnCircle( { rotation, radius, children } ) {
+    return html`
+        <div class="card-table-seat-wrapper" style="
+            transform: translate(-50%, -50%) rotate(${rotation}) translate(-${radius});
+        ">
+             <div style="
+                transform: rotate(-${rotation});
+            ">
+                ${children}
+            </div>
+        </div>
+    `
 }
 
 function CardTable({ state }) {
@@ -97,13 +111,18 @@ function CardTable({ state }) {
     const myPlayerId = state.currentPlayer.id
     return html`
         <div class="card-table">
+            ${cardValues.map((cardValue, i) => html`
+                <${OnCircle} rotation="${i*(360.0/cardValues.length)}deg" radius="20cqw">
+                    <${SayAndPlayButton} cardValue=${cardValue} />
+                </${OnCircle}>
+            `)}
             ${Object.entries(players).map(([playerId, playerData], i) => html`
                 <div class="card-table-seat-wrapper" style="
-                    transform: rotate(${i*(360.0/nPlayers)}deg) translate(-40vmin);
+                    transform: rotate(${i*(360.0/nPlayers)}deg) translate(-40cqw);
                 ">
                     <div class="card-table-seat" style="
                         transform: rotate(-${i*(360.0/nPlayers)}deg) translate(-50%, -50%);
-                        border: 1.6vmin solid ${playerId === myPlayerId ? "black" : "saddlebrown"};
+                        border: 1.6cqw solid ${playerId === myPlayerId ? "black" : "saddlebrown"};
                     ">
                         <span class="card-table-player-name">${playerData.name}</span>
                         ${state.lastMove?.action === Move.SayAndPlay && state.lastMove?.player === playerId && html`
@@ -115,7 +134,7 @@ function CardTable({ state }) {
                     </div>
                 </div>
                 <div class="card-table-seat-wrapper" style="
-                    transform: rotate(${i*(360.0/nPlayers)}deg) translate(-25vmin);
+                    transform: rotate(${i*(360.0/nPlayers)}deg) translate(-28cqw);
                 ">
                     <div class="card-table-seat-hand" style="
                         transform: rotate(-${i*(360.0/nPlayers)}deg) translate(-50%, -50%);
@@ -124,7 +143,7 @@ function CardTable({ state }) {
                     </div>
                 </div>
                 <div class="card-table-seat-wrapper" style="
-                    transform: translate(-50%, -50%) rotate(${i*(360.0/nPlayers)}deg) translate(-40vmin);
+                    transform: translate(-50%, -50%) rotate(${i*(360.0/nPlayers)}deg) translate(-40cqw);
                     z-index: ${100+playerData.isSlapping};
                 ">
                     <div class="slapper ${playerData.isSlapping ? " slapping" : ""}">
@@ -132,8 +151,10 @@ function CardTable({ state }) {
                     </div>
                 </div>
             `)}
-            <div class="card-table-center" />
-            <div class="card-table-stack">
+            <div class="card-table-center" onClick=${() => slap()}>
+                <span>Press here to slap</span>
+            </div>
+            <div class="card-table-stack" onClick=${() => slap()}>
                 <${PlayingCardStack} topCard=${state.playedLast} size=${state.stackSize} />
             </div>
         </div>
@@ -159,30 +180,14 @@ function App(props) {
     // TODO: if you slap/play incorrectly at the start of the round then starting player shouldn't rotate
     // TODO: if you're out then you can keep playing but don't place any cards
     return html`
-        <div>
-            <${WinningMessage} state=${s} />
-            <div style="
-                display: flex;
-                justify-content: center;
-            ">
-                <${CardTable} state=${s} />
-            </div>
-            <div style="
-                display: flex;
-                justify-content: center;
-            ">
-                <div>
-                    <div>${s.currentPlayer.name} controls</div>
-                    <div>
-                        ${cardValues.map((cardValue) => html`<${SayAndPlayButton} cardValue=${cardValue} />`)}
-                        <button onClick=${() => slap()}>Slap!</button>
-                    </div>
-                </div>
-                <ul class="message-feed">
-                    ${s.eventLog.slice(-5).reverse().map((message) => html`<li>${message}</li>`)}
-                </ul>
-            </div>
+        <${WinningMessage} state=${s} />
+        <${CardTable} state=${s} />
+        <div class="buttons">
+            
         </div>
+        <ul class="message-feed">
+            ${s.eventLog.slice(-5).reverse().map((message) => html`<li>${message}</li>`)}
+        </ul>
     `
 }
 
