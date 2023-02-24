@@ -14,18 +14,49 @@
     body {
         touch-action: manipulation;
         margin: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        display: grid;
+        grid-template-columns: 100vmin 1fr;
     }
 
+
     .card-table {
+        grid-column: 1 / 1;
         width: 100vmin;
         aspect-ratio: 1 / 1;
         position: relative;
         font-family: sans-serif;
-        container: card-table / size;
+        container-type: inline-size;
         display: inline-block;
+    }
+
+    .say-and-play-button {
+        width: 2cm;
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
+    }
+
+    .buttons {
+        grid-column: 2 / 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    @media (max-width: calc(100vh + 4cm)) {
+        body {
+            grid-template-columns: none;
+            grid-template-rows: 100vmin 1fr;
+        }
+        .card-table {
+            grid-column: unset;
+            grid-row: 1 / 1;
+        }
+        .buttons {
+            grid-column: unset;
+            grid-row: 2 / 2;
+        }
     }
 
     .card-table-seat-wrapper {
@@ -154,6 +185,7 @@
         background-color: white;
         opacity: 0.6;
         font-size: 1rem;
+        pointer-events: none;
     }
 
     .message-feed li {
@@ -241,11 +273,8 @@
         }
     }
 
-    .say-and-play-button {
-        width: 8cqw;
-        aspect-ratio: 1 / 1;
-        border-radius: 50%;
-    }
+
+
 </style>
 <script type="module" src="./client.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/container-query-polyfill@1/dist/container-query-polyfill.modern.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/container-query-polyfill@1/dist/container-query-polyfill.modern.js"></script> -->

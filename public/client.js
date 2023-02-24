@@ -111,11 +111,7 @@ function CardTable({ state }) {
     const myPlayerId = state.currentPlayer.id
     return html`
         <div class="card-table">
-            ${cardValues.map((cardValue, i) => html`
-                <${OnCircle} rotation="${i*(360.0/cardValues.length)}deg" radius="20cqw">
-                    <${SayAndPlayButton} cardValue=${cardValue} />
-                </${OnCircle}>
-            `)}
+            
             ${Object.entries(players).map(([playerId, playerData], i) => html`
                 <div class="card-table-seat-wrapper" style="
                     transform: rotate(${i*(360.0/nPlayers)}deg) translate(-40cqw);
@@ -175,7 +171,6 @@ function App(props) {
     const s = state.value;
     // TODO: contesting rule violations should be done by players, not the server
     // TODO: timeout if player takes too long
-    // TODO: click in the center to slap
     // TODO: add slap reason
     // TODO: if you slap/play incorrectly at the start of the round then starting player shouldn't rotate
     // TODO: if you're out then you can keep playing but don't place any cards
@@ -183,7 +178,13 @@ function App(props) {
         <${WinningMessage} state=${s} />
         <${CardTable} state=${s} />
         <div class="buttons">
-            
+            <div>
+                ${cardValues.map((cardValue, i) => html`
+                    <!-- <${OnCircle} rotation="${i*(360.0/cardValues.length)}deg" radius="40vmin"> -->
+                        <${SayAndPlayButton} cardValue=${cardValue} />
+                    <!-- </${OnCircle}> -->
+                `)}
+            </div>
         </div>
         <ul class="message-feed">
             ${s.eventLog.slice(-5).reverse().map((message) => html`<li>${message}</li>`)}
