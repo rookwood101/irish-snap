@@ -81,7 +81,7 @@ function PlayingCardStack({ topCard, size }) {
     return html`
         <div class="playing-card-stack-wrapper">
             <img class="playing-card-stack" src=${getPlayingCardSvgPath(topCard)} style="
-                --offset: ${offset}cqw
+                --offset: ${offset}vmin
             "/>
         </div>
     `
@@ -114,11 +114,11 @@ function CardTable({ state }) {
             
             ${Object.entries(players).map(([playerId, playerData], i) => html`
                 <div class="card-table-seat-wrapper" style="
-                    transform: rotate(${i*(360.0/nPlayers)}deg) translate(-40cqw);
+                    transform: rotate(${i*(360.0/nPlayers)}deg) translate(-40vmin);
                 ">
                     <div class="card-table-seat" style="
                         transform: rotate(-${i*(360.0/nPlayers)}deg) translate(-50%, -50%);
-                        border: 1.6cqw solid ${playerId === myPlayerId ? "black" : "saddlebrown"};
+                        border: 1.6vmin solid ${playerId === myPlayerId ? "black" : "saddlebrown"};
                     ">
                         <span class="card-table-player-name">${playerData.name}</span>
                         ${state.lastMove?.action === Move.SayAndPlay && state.lastMove?.player === playerId && html`
@@ -130,7 +130,7 @@ function CardTable({ state }) {
                     </div>
                 </div>
                 <div class="card-table-seat-wrapper" style="
-                    transform: rotate(${i*(360.0/nPlayers)}deg) translate(-28cqw);
+                    transform: rotate(${i*(360.0/nPlayers)}deg) translate(-28vmin);
                 ">
                     <div class="card-table-seat-hand" style="
                         transform: rotate(-${i*(360.0/nPlayers)}deg) translate(-50%, -50%);
@@ -139,7 +139,7 @@ function CardTable({ state }) {
                     </div>
                 </div>
                 <div class="card-table-seat-wrapper" style="
-                    transform: translate(-50%, -50%) rotate(${i*(360.0/nPlayers)}deg) translate(-40cqw);
+                    transform: translate(-50%, -50%) rotate(${i*(360.0/nPlayers)}deg) translate(-40vmin);
                     z-index: ${100+playerData.isSlapping};
                 ">
                     <div class="slapper ${playerData.isSlapping ? " slapping" : ""}">
