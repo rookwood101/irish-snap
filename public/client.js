@@ -187,7 +187,7 @@ function App(props) {
             </div>
         </div>
         <ul class="message-feed">
-            ${s.eventLog.slice(-5).reverse().map((message) => html`<li>${message}</li>`)}
+            ${s.eventLog.slice(-2).reverse().map((message) => html`<li>${message}</li>`)}
         </ul>
     `
 }
