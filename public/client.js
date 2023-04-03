@@ -1,4 +1,5 @@
 import { h, render } from 'https://esm.sh/preact?dev'
+import { useRef } from 'https://esm.sh/preact/hooks?dev'
 import { signal } from "https://esm.sh/@preact/signals?dev"
 import htm from "https://esm.sh/htm?dev"
 import { io } from "/socket.io/socket.io.esm.min.js"
@@ -167,6 +168,51 @@ function WinningMessage({ state }) {
     `
 }
 
+function Rules({ state }) {
+    const dialog = useRef(null)
+
+    return html`
+    <button onClick=${() => dialog.current.showModal()}>Irish Snap Rules</button>
+    <dialog ref=${dialog}>
+        <h2>Irish Snap Rules</h2>
+        <p>Players: 2+</p>
+        <h3>The Objective</h3>
+        <p>To lose all the cards in your hand.</p>
+        <h3>The Deal</h3>
+        <p>
+            All the players sit around a table, so that they can all reach the centre.
+            All the cards are dealt out, to all the players.
+            Cards remain face-down and players may not look at their cards.
+        </p>
+        <h3>The Play</h3>
+        <p>
+            Starting with the person to the dealer's left (indicated by "1st" icon).
+            They initiate play by turning over their top card and placing it into the centre, face-up, saying "Ace" (by pressing the buttons).
+            The player on his left then puts their top card face-up on top of his, while saying "Two".
+            Play continues in this way (going "Ace", "Two", ... "Nine", "Ten", "Jack", "Queen", "King", "Ace", "Two", etc) until one (or more!) of the following occurs:
+        </p>
+        <ul>
+            <li>The card just played matches the card underneath (same as normal snap).</li>
+            <li>The card just played matches the card number spoken by the player (e.g. they put down an Ace while saying "Ace").</li>
+            <li>A Jack is played.</li>
+        </ul>
+        <p>
+            At this point, all the players must slap their hands on top of the pile of cards in the centre, as fast as possible.
+            The last player to do so takes the entire pile and puts them on the bottom of the pile in their hand.
+            This player then starts the next round, resuming from "Ace".
+        </p>
+        <p>If any player slaps or flinches without these conditions being met, they forfeit the round and pick up all the cards in the centre.</p>
+        <p>
+            When a player has used all their cards, they continue to say numbers in turn, and still have to slap when required.
+            Only when one player has all the cards does the game end.
+        </p>
+        <form method="dialog">
+            <input type="submit" value="Close" />
+        </form>
+    </dialog>
+    `
+}
+
 function App(props) {
     const s = state.value;
     // TODO: contesting rule violations should be done by players, not the server
@@ -175,6 +221,7 @@ function App(props) {
     // TODO: if you slap/play incorrectly at the start of the round then starting player shouldn't rotate
     // TODO: if you're out then you can keep playing but don't place any cards
     return html`
+        <${Rules} />
         <${WinningMessage} state=${s} />
         <${CardTable} state=${s} />
         <div class="buttons">
