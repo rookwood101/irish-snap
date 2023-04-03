@@ -1,6 +1,6 @@
-import { h, Component, render } from 'https://esm.sh/preact@10.11.3'
-import { signal } from "https://esm.sh/@preact/signals@1.1.3"
-import htm from "https://esm.sh/htm@3.1.1"
+import { h, render } from 'https://esm.sh/preact?dev'
+import { signal } from "https://esm.sh/@preact/signals?dev"
+import htm from "https://esm.sh/htm?dev"
 import { io } from "/socket.io/socket.io.esm.min.js"
 
 import { cardValues, cardSuits, allCards, Move, Phase } from "./shared.js"
